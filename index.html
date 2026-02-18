@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gran Premio 12 — Gestor de Pilotos</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E10600">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root{
+  --bg:#ffffff;
+  --card:#ffffff;
+  --text:#111111;
+  --muted:#666666;
+  --line:#e5e5e5;
+  --red:#E10600;
+  --black:#111111;
+  --shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  background:var(--bg);
+  color:var(--text);
+}
+
+header{
+  padding:18px 16px;
+  border-bottom:2px solid var(--red);
+  background:#fff;
+}
+
+h1{
+  margin:0;
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:.5px;
+}
+
+.sub{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+main{
+  max-width:1100px;
+  margin:0 auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+
+.btn{
+  padding:10px 14px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  transition:all .2s ease;
+}
+
+.btn.primary{
+  background:var(--red);
+  color:#fff;
+}
+
+.btn.primary:hover{
+  background:#c00500;
+  transform:translateY(-2px);
+}
+
+.btn.good{
+  background:var(--black);
+  color:#fff;
+}
+
+.btn.good:hover{
+  background:#000;
+  transform:translateY(-2px);
+}
+
+.btn.warn{
+  background:#f5f5f5;
+  color:#111;
+  border:1px solid #ddd;
+}
+
+.btn.warn:hover{
+  background:#eaeaea;
+}
+
+input, select{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  background:#fff;
+  transition:border .2s ease;
+}
+
+input:focus, select:focus{
+  border:1px solid var(--red);
+  outline:none;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th{
+  text-align:left;
+  font-size:12px;
+  color:var(--muted);
+  border-bottom:2px solid var(--line);
+  padding:10px 8px;
+}
+
+td{
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+}
+.tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:10px 0 16px;
+}
+
+.tab{
+  padding:10px 14px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  background:#fff;
+  color:#111;
+  cursor:pointer;
+  font-weight:700;
+  transition:all .2s ease;
+}
+
+.tab:hover{
+  border-color:#bbb;
+  transform:translateY(-2px);
+}
+
+.tab.active{
+  background:var(--black);
+  color:#fff;
+  border-color:var(--black);
+  box-shadow:var(--shadow);
+}
+
+.tab.active:hover{
+  transform:translateY(-2px);
+}
+.header-content{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo-f1{
+  height:80px;
+  object-fit:contain;
+  transition:transform .2s ease;
+}
+
+.logo-f1:hover{
+  transform:scale(1.05);
+}
+.two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+@media (max-width:900px){
+  .two{ grid-template-columns:1fr; }
+}
+.match{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+
+.match .title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.match .line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:8px 0;
+  font-weight:700;
+}
+
+.bracket{
+  display:grid;
+  gap:12px;
+}
+#boxSeleccionados{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid #ddd;
+  background:#fff;
+  font-size:12px;
+  font-weight:700;
+}
+
+.chip.good{
+  border-color: rgba(225,6,0,.35);
+  background: rgba(225,6,0,.06);
+}
+
+.chip.warn{
+  border-color: rgba(17,17,17,.25);
+  background: rgba(17,17,17,.04);
+}
+.champion-card{
+  background:#f3f3f3;
+  border:1px solid #e0e0e0;
+  border-left:6px solid var(--red);
+  border-radius:14px;
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+
+.champion-card .title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+}
+
+.champion-card .name{
+  margin-top:6px;
+  font-size:22px;
+  font-weight:900;
+}
+
+.champion-card .meta{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+}
+#btnAutoAsignar2 {
+  display: none !important;
+}
+
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-content">
+    <div>
+      <h1>Gran Premio 12 — Gestor de Pilotos</h1>
+      <div class="sub">Control de Carrera para el GP de MABÁM en el cumple #2 de Manuel Alessandro</div>
+
+    </div>
+    <img src="logo-f1.png" class="logo-f1" alt="F1 Logo">
+  </div>
+</header>
+
+<main>
+  <div class="tabs no-print">
+    <button class="tab active" data-tab="pilotos">Pilotos</button>
+    <button class="tab" data-tab="clasificacion">Clasificación</button>
+    <button class="tab" data-tab="torneo">Torneo</button>
+  </div>
+
+  <!-- PILOTOS -->
+  <section id="pilotos" class="grid">
+    <div class="card">
+      <div class="row">
+        <div style="min-width:220px;flex:1">
+          <label>Nombre del piloto</label>
+          <input id="inNombre" type="text" placeholder="Ej: Sofía" />
+        </div>
+        <div style="width:160px">
+          <label>Edad</label>
+          <input id="inEdad" type="number" min="0" max="18" placeholder="Ej: 6" />
+        </div>
+        <div style="width:220px">
+          <label>Experiencia (opcional)</label>
+          <select id="inExp">
+            <option value="0">0 — Nunca jugó</option>
+            <option value="1">1 — Básico</option>
+            <option value="2">2 — Avanzado</option>
+          </select>
+        </div>
+        <button class="btn primary" id="btnAgregar">Agregar piloto</button>
+
+        <span class="right"></span>
+        <button class="btn" id="btnGuardar">Guardar</button>
+        <button class="btn warn" id="btnReset">Reiniciar todo</button>
+      </div>
+
+      <div class="small muted" style="margin-top:10px">
+        Categorías: <b>JR</b> (0 a 7 años) • <b>Mayores</b> (más de 7). Se auto-asignan por edad y tiempo de carrera.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row no-print">
+        <div style="width:260px">
+          <label>Acción rápida</label>
+          <select id="selAutoModo">
+            <option value="porCategoria">Auto asignar A/B por categoría (recomendado)</option>
+            <option value="todoJunto">Auto asignar A/B con todos juntos</option>
+          </select>
+        </div>
+        <button class="btn good" id="btnAutoAsignar">Auto asignar Grupos A/B (equilibrado)</button>
+        <button class="btn" id="btnImprimirPilotos">Imprimir</button>
+        <button class="btn" id="btnCSV">Exportar CSV</button>
+      </div>
+
+      <div class="split" style="margin-top:10px">
+        <div>
+          <div class="row" style="margin-bottom:8px">
+            <b>Listado de pilotos</b>
+            <span class="chip" id="chipTotal">0</span>
+          </div>
+          <table id="tblPilotos">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Categoría</th>
+                <th>Tiempo (mm:ss.ms)</th>
+                <th>Grupo</th>
+                <th class="no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="row" style="margin-bottom:8px">
+            <b>Notas rápidas</b>
+          </div>
+          <div class="notes-card">
+
+            <div class="kpi">
+              <div class="box"><b id="kpiJR">0</b><span>Pilotos JR</span></div>
+              <div class="box"><b id="kpiMay">0</b><span>Pilotos Mayores</span></div>
+              <div class="box"><b id="kpiA">0</b><span>En Grupo A</span></div>
+              <div class="box"><b id="kpiB">0</b><span>En Grupo B</span></div>
+            </div>
+            <div class="muted small" style="margin-top:10px;line-height:1.4">
+              <b>Cómo equilibra el sistema:</b><br/>
+              Ordena por tiempo (mejor → peor). Luego forma pares: (1º + último), (2º + penúltimo), etc.
+              Asigna el primer par al Grupo A, el segundo par al Grupo B, y así sucesivamente, manteniendo tamaños lo más iguales posible.
+              <br/><br/>
+              Si un niño no tiene tiempo, se considera “sin tiempo” y se coloca al final (para no favorecerlo injustamente).
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLASIFICACION -->
+  <section id="clasificacion" class="grid" style="display:none">
+    <div class="card">
+      <div class="row no-print">
+        <div style="width:220px">
+          <label>Ver categoría</label>
+          <select id="selCatView">
+            <option value="ALL">Todas</option>
+            <option value="JR">JR (0–7)</option>
+            <option value="MAY">Mayores (&gt;7)</option>
+          </select>
+        </div>
+        <button class="btn" id="btnOrdenar">Ordenado por tiempo</button>
+        <button class="btn good" id="btnAutoAsignar2">Auto asignar Grupos A/B (equilibrado)</button>
+        <button class="btn" id="btnImprimirClas">Imprimir</button>
+      </div>
+
+      <div class="print-note"><b>Gran Premio 12 — Clasificación</b></div>
+
+      <table id="tblClas">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Edad</th>
+            <th>Categoría</th>
+            <th>Tiempo</th>
+            <th>Grupo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="muted small" style="margin-top:10px">
+        Tip: escribe tiempos como <b>1:23.45</b> o en segundos <b>83.45</b>.
+      </div>
+    </div>
+  </section>
+
+  <!-- TORNEO -->
+  <section id="torneo" class="grid" style="display:none">
+    <div class="card">
+      <div class="row no-print">
+        <div style="width:240px">
+          <label>Categoria del torneo</label>
+          <select id="selCatTorneo">
+            <option value="JR">JR (0–7)</option>
+            <option value="MAY">Mayores (&gt;7)</option>
+          </select>
+        </div>
+        <button class="btn primary" id="btnGenerarLlaves">Generar llaves (Top 2 de A y B)</button>
+        <button class="btn" id="btnImprimirTorneo">Imprimir</button>
+      </div>
+
+      <div class="muted small" style="margin-top:8px;line-height:1.4">
+        Requisitos: tener tiempos cargados y grupos A/B asignados (por categoría). Se toman los <b>2 mejores</b> de cada grupo.
+        Semis: <b>A1 vs B2</b> y <b>B1 vs A2</b>. Final: ganadores.
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <b>Participantes seleccionados</b>
+        <div class="muted small" style="margin-top:8px">Se llena al generar llaves.</div>
+        <div id="boxSeleccionados" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <b>Eliminatorias</b>
+        <div class="bracket" style="margin-top:10px">
+          <div class="match" id="mSemi1">
+            <div class="title"><span>Semifinal 1</span><span class="muted">A1 vs B2</span></div>
+            <div class="line"><span id="s1p1" class="muted">—</span><span class="muted">vs</span><span id="s1p2" class="muted">—</span></div>
+            <label class="small">Ganador</label>
+            <select id="winSemi1"><option value="">—</option></select>
+          </div>
+
+          <div class="match" id="mSemi2">
+            <div class="title"><span>Semifinal 2</span><span class="muted">B1 vs A2</span></div>
+            <div class="line"><span id="s2p1" class="muted">—</span><span class="muted">vs</span><span id="s2p2" class="muted">—</span></div>
+            <label class="small">Ganador</label>
+            <select id="winSemi2"><option value="">—</option></select>
+          </div>
+
+          <div class="match" id="mFinal">
+  <div class="title"><span>Final</span><span class="muted">Ganador SF1 vs Ganador SF2</span></div>
+  <div class="line"><span id="fp1" class="muted">—</span><span class="muted">vs</span><span id="fp2" class="muted">—</span></div>
+
+  <label class="small">Campeón</label>
+  <select id="winFinal"><option value="">—</option></select>
+
+  <div style="height:8px"></div>
+  <label class="small">Tiempo de carrera (FINAL)</label>
+  <input id="finalTime" placeholder="0:00:00 - 00:00" style="width:100%" />
+</div>
+
+        </div>
+
+        <div class="row no-print" style="margin-top:10px">
+          <button class="btn good" id="btnGuardarTorneo">Guardar resultados</button>
+          <button class="btn danger" id="btnLimpiarTorneo">Limpiar llaves</button>
+        </div>
+
+        <div id="boxCampeon" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/** =========================
+ *  Estado + Persistencia
+ *  ========================= */
+const LS_KEY = "gp12_state_v1";
+
+let state = loadState() ?? {
+  pilotos: [], // {id,nombre,edad,exp,timeSec,grupoJR,grupoMAY,grupoALL}
+  torneo: {
+  JR: { semi1:null, semi2:null, final:null, seed:null, finalTimeSec:null },
+  MAY:{ semi1:null, semi2:null, final:null, seed:null, finalTimeSec:null }
+}
+
+};
+
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch { return null; }
+}
+function uid(){ return Math.random().toString(16).slice(2) + Date.now().toString(16); }
+
+/** =========================
+ *  Helpers de categoría/tiempo
+ *  ========================= */
+function categoriaPorEdad(edad){
+  return (Number(edad) <= 7) ? "JR" : "MAY";
+}
+function parseTiempoToSec(raw){
+  if(raw == null) return null;
+  const s = String(raw).trim();
+  if(!s) return null;
+
+  // Permite "83.45"
+  if(/^\d+(\.\d+)?$/.test(s)) return Number(s);
+
+  // Permite "m:ss.ms" o "mm:ss" o "m:ss"
+  // Ej: 1:23.45
+  const m = s.match(/^(\d+):([0-5]?\d)(\.\d+)?$/);
+  if(!m) return null;
+  const min = Number(m[1]);
+  const sec = Number(m[2]);
+  const ms = m[3] ? Number(m[3]) : 0;
+  return (min*60) + sec + ms;
+}
+function fmtTiempo(sec){
+  if(sec == null || !isFinite(sec)) return "—";
+  const total = Number(sec);
+  const min = Math.floor(total / 60);
+  const rem = total - min*60;
+  const secInt = Math.floor(rem);
+  const ms = Math.round((rem - secInt) * 100);
+  const ss = String(secInt).padStart(2,"0");
+  const mss = String(ms).padStart(2,"0");
+  return `${min}:${ss}.${mss}`;
+}
+function sortPorTiempoAsc(a,b){
+  const ta = (a.timeSec==null) ? Infinity : a.timeSec;
+  const tb = (b.timeSec==null) ? Infinity : b.timeSec;
+  if(ta !== tb) return ta - tb;
+  return a.nombre.localeCompare(b.nombre);
+}
+
+/** =========================
+ *  Tabs
+ *  ========================= */
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const t = btn.dataset.tab;
+    ["pilotos","clasificacion","torneo"].forEach(id=>{
+      document.getElementById(id).style.display = (id===t) ? "" : "none";
+    });
+    renderAll();
+  });
+});
+
+/** =========================
+ *  UI Pilotos
+ *  ========================= */
+const inNombre = document.getElementById("inNombre");
+const inEdad = document.getElementById("inEdad");
+const inExp = document.getElementById("inExp");
+
+document.getElementById("btnAgregar").addEventListener("click", ()=>{
+  const nombre = inNombre.value.trim();
+  const edad = Number(inEdad.value);
+  const exp = Number(inExp.value);
+  if(!nombre) return alert("Pon el nombre del piloto.");
+  if(!Number.isFinite(edad) || edad<0) return alert("Pon una edad válida.");
+  state.pilotos.push({
+    id: uid(),
+    nombre,
+    edad,
+    exp,
+    timeSec: null,
+    grupoJR: "",
+    grupoMAY: "",
+    grupoALL: ""
+  });
+  inNombre.value=""; inEdad.value=""; inExp.value="0";
+  saveState();
+  renderAll();
+});
+
+document.getElementById("btnGuardar").addEventListener("click", ()=>{
+  saveState(); alert("Guardado ✅");
+});
+
+document.getElementById("btnReset").addEventListener("click", ()=>{
+  if(!confirm("¿Seguro? Esto borra pilotos, tiempos y llaves.")) return;
+  localStorage.removeItem(LS_KEY);
+  state = {
+    pilotos: [],
+    torneo: { JR:{semi1:null,semi2:null,final:null,seed:null}, MAY:{semi1:null,semi2:null,final:null,seed:null} }
+  };
+  renderAll();
+});
+
+document.getElementById("btnCSV").addEventListener("click", exportCSV);
+document.getElementById("btnImprimirPilotos").addEventListener("click", ()=>window.print());
+
+/** =========================
+ *  Auto-asignación A/B equilibrada
+ *  ========================= */
+document.getElementById("btnAutoAsignar").addEventListener("click", ()=>autoAsignarDesde("pilotos"));
+document.getElementById("btnAutoAsignar2").addEventListener("click", ()=>autoAsignarDesde("clasificacion"));
+
+function autoAsignarDesde(origen){
+  const modo = document.getElementById("selAutoModo")?.value ?? "porCategoria";
+  if(state.pilotos.length < 2) return alert("Agrega al menos 2 pilotos.");
+
+  if(modo === "todoJunto"){
+    asignarAB_equilibrado(state.pilotos, "ALL");
+  }else{
+    const jr = state.pilotos.filter(p=>categoriaPorEdad(p.edad)==="JR");
+    const may = state.pilotos.filter(p=>categoriaPorEdad(p.edad)==="MAY");
+    asignarAB_equilibrado(jr, "JR");
+    asignarAB_equilibrado(may, "MAY");
+  }
+  saveState();
+  renderAll();
+  if(origen) {/* no-op */}
+}
+
+function asignarAB_equilibrado(lista, key){
+  // key: "JR" | "MAY" | "ALL"
+  // Ordena por tiempo: mejor->peor. Sin tiempo al final.
+  const sorted = [...lista].sort(sortPorTiempoAsc);
+
+  const A = [];
+  const B = [];
+
+  // Forma pares (1º+último), (2º+penúltimo)...
+  let i=0, j=sorted.length-1;
+  let pairIndex = 0;
+
+  while(i <= j){
+    if(i===j){
+      // Elemento medio (impar): al grupo con menos miembros
+      const target = (A.length <= B.length) ? A : B;
+      target.push(sorted[i]);
+      break;
+    }
+    const pair = [sorted[i], sorted[j]];
+    if(pairIndex % 2 === 0) A.push(...pair);
+    else B.push(...pair);
+    pairIndex++;
+    i++; j--;
+  }
+
+  // Rebalance final si hay diferencia >1 (muy raro, pero por seguridad)
+  while(Math.abs(A.length - B.length) > 1){
+    if(A.length > B.length) B.push(A.pop());
+    else A.push(B.pop());
+  }
+
+  // Escribe grupos a cada piloto
+  for(const p of A) setGrupo(p, key, "A");
+  for(const p of B) setGrupo(p, key, "B");
+}
+
+function setGrupo(p, key, val){
+  if(key==="JR") p.grupoJR = val;
+  else if(key==="MAY") p.grupoMAY = val;
+  else p.grupoALL = val;
+}
+
+/** =========================
+ *  Tablas (Pilotos + Clasificación)
+ *  ========================= */
+const tbodyPilotos = document.querySelector("#tblPilotos tbody");
+const tbodyClas = document.querySelector("#tblClas tbody");
+
+document.getElementById("selCatView").addEventListener("change", renderClasificacion);
+document.getElementById("btnOrdenar").addEventListener("click", ()=>{
+  // Ordenar no modifica datos, solo vista
+  renderClasificacion();
+});
+document.getElementById("btnImprimirClas").addEventListener("click", () => {
+  html2canvas(document.body, {
+    backgroundColor: "#ffffff",
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    windowWidth: document.documentElement.scrollWidth,
+    windowHeight: document.documentElement.scrollHeight,
+    ignoreElements: (el) => el.tagName === "IMG"
+  }).then((canvas) => {
+    const link = document.createElement("a");
+    link.download = "Gran_Premio_12_Clasificacion.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }).catch((err) => {
+    console.error(err);
+    alert("No se pudo generar la captura (probable CORS por imágenes).");
+  });
+});
+
+
+
+
+
+function renderPilotos(){
+  tbodyPilotos.innerHTML = "";
+  const pilotos = [...state.pilotos].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  for(const p of pilotos){
+    const cat = categoriaPorEdad(p.edad);
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td><b>${escapeHtml(p.nombre)}</b></td>
+      <td>${p.edad}</td>
+      <td>${chipCat(cat)}</td>
+      <td>
+        <input data-id="${p.id}" class="inTiempo" placeholder="1:23.45 ó 83.45" value="${p.timeSec==null?"":fmtTiempo(p.timeSec)}" style="width:160px"/>
+      </td>
+      <td>${renderGrupo(p, cat)}</td>
+      <td class="no-print">
+        <button class="btn danger btnDel" data-id="${p.id}">Eliminar</button>
+      </td>
+    `;
+    tbodyPilotos.appendChild(tr);
+  }
+
+  // Listeners tiempos
+  document.querySelectorAll(".inTiempo").forEach(inp=>{
+    inp.addEventListener("change", (e)=>{
+      const id = e.target.dataset.id;
+      const p = state.pilotos.find(x=>x.id===id);
+      const sec = parseTiempoToSec(e.target.value);
+      if(e.target.value.trim() && (sec==null || !isFinite(sec))){
+        alert("Tiempo inválido. Usa 1:23.45 o 83.45");
+        e.target.value = p.timeSec==null ? "" : fmtTiempo(p.timeSec);
+        return;
+      }
+      p.timeSec = (e.target.value.trim()==="") ? null : sec;
+      saveState();
+      renderAll();
+    });
+  });
+
+  // Listeners eliminar
+  document.querySelectorAll(".btnDel").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.dataset.id;
+      const p = state.pilotos.find(x=>x.id===id);
+      if(!confirm(`¿Eliminar a ${p?.nombre ?? "este piloto"}?`)) return;
+      state.pilotos = state.pilotos.filter(x=>x.id!==id);
+      saveState();
+      renderAll();
+    });
+  });
+
+  // KPIs
+  const jr = state.pilotos.filter(p=>categoriaPorEdad(p.edad)==="JR").length;
+  const may = state.pilotos.length - jr;
+  const aCount = state.pilotos.filter(p=>{
+    const cat = categoriaPorEdad(p.edad);
+    return (cat==="JR" ? p.grupoJR : p.grupoMAY) === "A";
+  }).length;
+  const bCount = state.pilotos.filter(p=>{
+    const cat = categoriaPorEdad(p.edad);
+    return (cat==="JR" ? p.grupoJR : p.grupoMAY) === "B";
+  }).length;
+
+  document.getElementById("chipTotal").textContent = state.pilotos.length;
+  document.getElementById("kpiJR").textContent = jr;
+  document.getElementById("kpiMay").textContent = may;
+  document.getElementById("kpiA").textContent = aCount;
+  document.getElementById("kpiB").textContent = bCount;
+}
+
+function renderClasificacion(){
+  tbodyClas.innerHTML = "";
+  const view = document.getElementById("selCatView").value;
+
+  let list = [...state.pilotos];
+  if(view==="JR") list = list.filter(p=>categoriaPorEdad(p.edad)==="JR");
+  if(view==="MAY") list = list.filter(p=>categoriaPorEdad(p.edad)==="MAY");
+
+  // Orden por tiempo
+  list.sort(sortPorTiempoAsc);
+
+  list.forEach((p,idx)=>{
+    const cat = categoriaPorEdad(p.edad);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx+1}</td>
+      <td><b>${escapeHtml(p.nombre)}</b></td>
+      <td>${p.edad}</td>
+      <td>${chipCat(cat)}</td>
+      <td>${fmtTiempo(p.timeSec)}</td>
+      <td>${renderGrupo(p, cat)}</td>
+    `;
+    tbodyClas.appendChild(tr);
+  });
+}
+
+function renderGrupo(p, cat){
+  const g = (cat==="JR") ? p.grupoJR : p.grupoMAY;
+  if(!g) return `<span class="muted">—</span>`;
+  return `<span class="chip ${g==="A"?"good":"warn"}">Grupo ${g}</span>`;
+}
+
+function chipCat(cat){
+  if(cat==="JR") return `<span class="chip good">JR</span>`;
+  return `<span class="chip warn">Mayores</span>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+}
+
+/** =========================
+ *  Torneo / Llaves
+ *  ========================= */
+const selCatTorneo = document.getElementById("selCatTorneo");
+document.getElementById("btnGenerarLlaves").addEventListener("click", generarLlaves);
+document.getElementById("btnGuardarTorneo").addEventListener("click", ()=>{
+  saveState(); alert("Resultados guardados ✅");
+});
+document.getElementById("btnLimpiarTorneo").addEventListener("click", ()=>{
+  const cat = selCatTorneo.value;
+  state.torneo[cat] = { semi1:null, semi2:null, final:null, seed:null, finalTimeSec:null };
+
+  saveState();
+  renderTorneo();
+});
+document.getElementById("btnImprimirTorneo").addEventListener("click", ()=>window.print());
+
+function generarLlaves(){
+  const cat = selCatTorneo.value;
+  const jugadores = state.pilotos.filter(p=>categoriaPorEdad(p.edad)===cat);
+
+  // Debe haber grupos A/B asignados para esa categoría
+  const grupoA = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="A").sort(sortPorTiempoAsc);
+  const grupoB = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="B").sort(sortPorTiempoAsc);
+
+  // Toma top2
+  const A1 = grupoA[0], A2 = grupoA[1];
+  const B1 = grupoB[0], B2 = grupoB[1];
+
+  if(!A1 || !A2 || !B1 || !B2){
+    return alert("Faltan participantes para llaves. Necesitas al menos 2 en A y 2 en B, con tiempos.");
+  }
+  if([A1,A2,B1,B2].some(p=>p.timeSec==null)){
+    return alert("Asegúrate de tener tiempos cargados para los top 2 de cada grupo.");
+  }
+
+  // Guarda seeds
+  state.torneo[cat].seed = { A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id };
+  state.torneo[cat].semi1 = null;
+  state.torneo[cat].semi2 = null;
+  state.torneo[cat].final = null;
+  state.torneo[cat].finalTimeSec = null;
+
+
+  saveState();
+  renderTorneo();
+}
+
+function renderTorneo(){
+  const cat = selCatTorneo.value;
+  const t = state.torneo[cat];
+  const seed = t.seed;
+
+  const boxSel = document.getElementById("boxSeleccionados");
+  const boxChamp = document.getElementById("boxCampeon");
+  boxChamp.innerHTML = "";
+  boxSel.innerHTML = `<div class="muted">—</div>`;
+
+  const s1p1 = document.getElementById("s1p1");
+  const s1p2 = document.getElementById("s1p2");
+  const s2p1 = document.getElementById("s2p1");
+  const s2p2 = document.getElementById("s2p2");
+  const fp1  = document.getElementById("fp1");
+  const fp2  = document.getElementById("fp2");
+
+  const winSemi1 = document.getElementById("winSemi1");
+  const winSemi2 = document.getElementById("winSemi2");
+  const winFinal = document.getElementById("winFinal");
+const finalTime = document.getElementById("finalTime");
+
+
+  // Reset selects
+  [winSemi1,winSemi2,winFinal].forEach(sel=>{
+    sel.innerHTML = `<option value="">—</option>`;
+  });
+
+  if(!seed){
+    s1p1.textContent = "—"; s1p2.textContent="—";
+    s2p1.textContent = "—"; s2p2.textContent="—";
+    fp1.textContent = "—"; fp2.textContent="—";
+    return;
+  }
+
+  const A1 = findPilot(seed.A1), A2 = findPilot(seed.A2), B1 = findPilot(seed.B1), B2 = findPilot(seed.B2);
+
+  // Semis: A1 vs B2, B1 vs A2
+  s1p1.textContent = labelPilot(A1);
+  s1p2.textContent = labelPilot(B2);
+  s2p1.textContent = labelPilot(B1);
+  s2p2.textContent = labelPilot(A2);
+
+  boxSel.innerHTML = `
+  <span class="chip good">A1: ${escapeHtml(A1.nombre)} (${fmtTiempo(A1.timeSec)})</span>
+  <span class="chip good">A2: ${escapeHtml(A2.nombre)} (${fmtTiempo(A2.timeSec)})</span>
+  <span class="chip warn">B1: ${escapeHtml(B1.nombre)} (${fmtTiempo(B1.timeSec)})</span>
+  <span class="chip warn">B2: ${escapeHtml(B2.nombre)} (${fmtTiempo(B2.timeSec)})</span>
+`;
+
+
+  // Fill winners dropdowns
+  addOpt(winSemi1, A1); addOpt(winSemi1, B2);
+  addOpt(winSemi2, B1); addOpt(winSemi2, A2);
+
+  // Restore selections
+  if(t.semi1) winSemi1.value = t.semi1;
+  if(t.semi2) winSemi2.value = t.semi2;
+
+  // Finalists display based on semis
+  const f1 = t.semi1 ? findPilot(t.semi1) : null;
+  const f2 = t.semi2 ? findPilot(t.semi2) : null;
+  fp1.textContent = f1 ? labelPilot(f1) : "—";
+  fp2.textContent = f2 ? labelPilot(f2) : "—";
+
+  // Final dropdown only if both finalists selected
+  if(f1 && f2){
+    addOpt(winFinal, f1); addOpt(winFinal, f2);
+    if(t.final) winFinal.value = t.final;
+  }
+// Mostrar/editar tiempo de la FINAL (solo si hay campeón seleccionado)
+finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
+finalTime.disabled = !state.torneo[cat].final;
+
+finalTime.onchange = ()=>{
+  const v = finalTime.value.trim();
+  if(!v){
+    state.torneo[cat].finalTimeSec = null;
+    saveState(); renderTorneo();
+    return;
+  }
+  const sec = parseTiempoToSec(v);
+  if(sec==null || !isFinite(sec)){
+    alert("Tiempo inválido. Usa 1:23.45 o 83.45");
+    finalTime.value = (state.torneo[cat].finalTimeSec==null) ? "" : fmtTiempo(state.torneo[cat].finalTimeSec);
+    return;
+  }
+  state.torneo[cat].finalTimeSec = sec;
+  saveState(); renderTorneo();
+};
+
+  winSemi1.onchange = ()=>{
+    state.torneo[cat].semi1 = winSemi1.value || null;
+    // Si cambia semi, resetea final si ya no aplica
+    if(state.torneo[cat].final && ![state.torneo[cat].semi1, state.torneo[cat].semi2].includes(state.torneo[cat].final)){
+      state.torneo[cat].final = null;
+    }
+    saveState(); renderTorneo();
+  };
+  winSemi2.onchange = ()=>{
+    state.torneo[cat].semi2 = winSemi2.value || null;
+    if(state.torneo[cat].final && ![state.torneo[cat].semi1, state.torneo[cat].semi2].includes(state.torneo[cat].final)){
+      state.torneo[cat].final = null;
+    }
+    saveState(); renderTorneo();
+  };
+  winFinal.onchange = ()=>{
+    state.torneo[cat].final = winFinal.value || null;
+    saveState(); renderTorneo();
+  };
+
+  if(state.torneo[cat].final){
+    const champ = findPilot(state.torneo[cat].final);
+    boxChamp.innerHTML = `
+  <div class="champion-card">
+    <div class="title">🏆 Campeón (${cat==="JR"?"JR":"Mayores"})</div>
+    <div class="name">${escapeHtml(champ.nombre)}</div>
+    <div class="meta">Clasificación: ${fmtTiempo(champ.timeSec)}</div>
+    <div class="meta">Final: ${fmtTiempo(state.torneo[cat].finalTimeSec)}</div>
+  </div>
+`;
+
+  }
+}
+
+function findPilot(id){ return state.pilotos.find(p=>p.id===id); }
+function labelPilot(p){ return `${p.nombre} • ${fmtTiempo(p.timeSec)}`; }
+function addOpt(sel, p){
+  const opt = document.createElement("option");
+  opt.value = p.id;
+  opt.textContent = p.nombre;
+  sel.appendChild(opt);
+}
+
+/** =========================
+ *  CSV Export
+ *  ========================= */
+function exportCSV(){
+  const rows = [
+    ["Nombre","Edad","Categoria","Tiempo_seg","Tiempo_fmt","Grupo_JR","Grupo_MAY","Grupo_ALL","Experiencia"]
+  ];
+  for(const p of state.pilotos){
+    const cat = categoriaPorEdad(p.edad);
+    rows.push([
+      p.nombre,
+      p.edad,
+      cat==="JR"?"JR":"Mayores",
+      p.timeSec==null?"":String(p.timeSec),
+      p.timeSec==null?"":fmtTiempo(p.timeSec),
+      p.grupoJR||"",
+      p.grupoMAY||"",
+      p.grupoALL||"",
+      p.exp
+    ]);
+  }
+  const csv = rows.map(r=>r.map(cell=>{
+    const s = String(cell ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(",")).join("\n");
+
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "gran_premio_12_pilotos.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** =========================
+ *  Render general
+ *  ========================= */
+function renderAll(){
+  renderPilotos();
+  renderClasificacion();
+  renderTorneo();
+}
+selCatTorneo.addEventListener("change", renderTorneo);
+
+// Inicial
+renderAll();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
