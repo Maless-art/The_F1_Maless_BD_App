@@ -855,30 +855,34 @@ document.getElementById("btnImprimirTorneo").addEventListener("click", ()=>windo
 
 function generarLlaves(){
   const cat = selCatTorneo.value;
-  const jugadores = state.pilotos.filter(p=>categoriaPorEdad(p.edad)===cat);
+  const jugadores = state.pilotos
+    .filter(p=>categoriaPorEdad(p.edad)===cat)
+    .filter(p=>p.timeSec!=null)
+    .sort(sortPorTiempoAsc);
 
-  // Debe haber grupos A/B asignados para esa categoría
-  const grupoA = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="A").sort(sortPorTiempoAsc);
-  const grupoB = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="B").sort(sortPorTiempoAsc);
-
-  // Toma top2
-  const A1 = grupoA[0], A2 = grupoA[1];
-  const B1 = grupoB[0], B2 = grupoB[1];
-
-  if(!A1 || !A2 || !B1 || !B2){
-    return alert("Faltan participantes para llaves. Necesitas al menos 2 en A y 2 en B, con tiempos.");
-  }
-  if([A1,A2,B1,B2].some(p=>p.timeSec==null)){
-    return alert("Asegúrate de tener tiempos cargados para los top 2 de cada grupo.");
+  if(jugadores.length < 4){
+    return alert("Necesitas al menos 4 pilotos con tiempo para generar semifinales.");
   }
 
-  // Guarda seeds
-  state.torneo[cat].seed = { A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id };
+  const grupoA = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="A");
+  const grupoB = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="B");
+
+  // Caso normal: Top2 de A y Top2 de B
+  if(grupoA.length >= 2 && grupoB.length >= 2){
+    const A1 = grupoA[0], A2 = grupoA[1];
+    const B1 = grupoB[0], B2 = grupoB[1];
+
+    state.torneo[cat].seed = { A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id, mode:"AB" };
+  } else {
+    // Fallback justo: Top 4 global
+    const top4 = jugadores.slice(0,4);
+    state.torneo[cat].seed = { T1:top4[0].id, T2:top4[1].id, T3:top4[2].id, T4:top4[3].id, mode:"TOP4" };
+  }
+
   state.torneo[cat].semi1 = null;
   state.torneo[cat].semi2 = null;
   state.torneo[cat].final = null;
   state.torneo[cat].finalTimeSec = null;
-
 
   saveState();
   renderTorneo();
@@ -919,29 +923,74 @@ const finalTime = document.getElementById("finalTime");
     return;
   }
 
-  const A1 = findPilot(seed.A1), A2 = findPilot(seed.A2), B1 = findPilot(seed.B1), B2 = findPilot(seed.B2);
+  const seed = t.seed;
 
-  // Semis: A1 vs B2, B1 vs A2
-  s1p1.textContent = labelPilot(A1);
-  s1p2.textContent = labelPilot(B2);
-  s2p1.textContent = labelPilot(B1);
-  s2p2.textContent = labelPilot(A2);
+if(!seed){
+  s1p1.textContent = "—"; s1p2.textContent="—";
+  s2p1.textContent = "—"; s2p2.textContent="—";
+  fp1.textContent = "—"; fp2.textContent="—";
+  return;
+}
 
-  boxSel.innerHTML = `
-  <span class="chip good">A1: ${escapeHtml(A1.nombre)} (${fmtTiempo(A1.timeSec)})</span>
-  <span class="chip good">A2: ${escapeHtml(A2.nombre)} (${fmtTiempo(A2.timeSec)})</span>
-  <span class="chip warn">B1: ${escapeHtml(B1.nombre)} (${fmtTiempo(B1.timeSec)})</span>
-  <span class="chip warn">B2: ${escapeHtml(B2.nombre)} (${fmtTiempo(B2.timeSec)})</span>
-`;
+let p1, p2, p3, p4;
 
+// 🔵 MODO NORMAL A/B
+if(seed.mode === "AB"){
+  const A1 = findPilot(seed.A1);
+  const A2 = findPilot(seed.A2);
+  const B1 = findPilot(seed.B1);
+  const B2 = findPilot(seed.B2);
 
-  // Fill winners dropdowns
-  addOpt(winSemi1, A1); addOpt(winSemi1, B2);
-  addOpt(winSemi2, B1); addOpt(winSemi2, A2);
+  // SF1: A1 vs B2
+  p1 = A1;
+  p2 = B2;
 
-  // Restore selections
-  if(t.semi1) winSemi1.value = t.semi1;
-  if(t.semi2) winSemi2.value = t.semi2;
+  // SF2: B1 vs A2
+  p3 = B1;
+  p4 = A2;
+
+  document.querySelector("#mSemi1 .title span:last-child").textContent = "A1 vs B2";
+  document.querySelector("#mSemi2 .title span:last-child").textContent = "B1 vs A2";
+}
+
+// 🔴 MODO TOP 4 GLOBAL
+if(seed.mode === "TOP4"){
+  const T1 = findPilot(seed.T1);
+  const T2 = findPilot(seed.T2);
+  const T3 = findPilot(seed.T3);
+  const T4 = findPilot(seed.T4);
+
+  // SF1: 1 vs 4
+  p1 = T1;
+  p2 = T4;
+
+  // SF2: 2 vs 3
+  p3 = T2;
+  p4 = T3;
+
+  document.querySelector("#mSemi1 .title span:last-child").textContent = "1 vs 4";
+  document.querySelector("#mSemi2 .title span:last-child").textContent = "2 vs 3";
+}
+
+// Pintar nombres
+s1p1.textContent = labelPilot(p1);
+s1p2.textContent = labelPilot(p2);
+s2p1.textContent = labelPilot(p3);
+s2p2.textContent = labelPilot(p4);
+
+// Limpiar selects
+winSemi1.innerHTML = `<option value="">—</option>`;
+winSemi2.innerHTML = `<option value="">—</option>`;
+
+addOpt(winSemi1, p1);
+addOpt(winSemi1, p2);
+addOpt(winSemi2, p3);
+addOpt(winSemi2, p4);
+
+// Restaurar selección previa
+if(t.semi1) winSemi1.value = t.semi1;
+if(t.semi2) winSemi2.value = t.semi2;
+
 
   // Finalists display based on semis
   const f1 = t.semi1 ? findPilot(t.semi1) : null;
