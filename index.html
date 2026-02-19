@@ -276,6 +276,18 @@ td{
 #btnAutoAsignar2 {
   display: none !important;
 }
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:1px solid #ddd;
+  background:#f5f5f5;
+  font-size:14px;
+  margin-left:8px;
+}
 
   </style>
 </head>
@@ -811,7 +823,14 @@ function renderClasificacion(){
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${idx+1}</td>
-      <td><b>${escapeHtml(p.nombre)}</b></td>
+      <td>
+  <b>${escapeHtml(p.nombre)}</b>
+${idx===0 ? `<span class="badge">🥇</span>` : ""}
+${idx===1 ? `<span class="badge">🥈</span>` : ""}
+${idx===2 ? `<span class="badge">🥉</span>` : ""}
+
+</td>
+
       <td>${p.edad}</td>
       <td>${chipCat(cat)}</td>
       <td>${fmtTiempo(p.timeSec)}</td>
