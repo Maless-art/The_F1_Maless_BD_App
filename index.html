@@ -452,8 +452,8 @@ td{
 
     <div class="two">
       <div class="card">
-        <b>Participantes seleccionados</b>
-        <div class="muted small" style="margin-top:8px">Se llena al generar llaves.</div>
+        <b>Participantes no clasificados</b>
+        <div class="muted small" style="margin-top:8px">Tiempos más altos en la clasificación.</div>
         <div id="boxSeleccionados" style="margin-top:10px"></div>
       </div>
 
@@ -855,34 +855,76 @@ document.getElementById("btnImprimirTorneo").addEventListener("click", ()=>windo
 
 function generarLlaves(){
   const cat = selCatTorneo.value;
+
   const jugadores = state.pilotos
-    .filter(p=>categoriaPorEdad(p.edad)===cat)
-    .filter(p=>p.timeSec!=null)
+    .filter(p => categoriaPorEdad(p.edad) === cat)
+    .filter(p => p.timeSec != null)
     .sort(sortPorTiempoAsc);
 
-  if(jugadores.length < 4){
-    return alert("Necesitas al menos 4 pilotos con tiempo para generar semifinales.");
+  if(jugadores.length < 2){
+    return alert("Necesitas al menos 2 pilotos con tiempo para generar final.");
   }
 
-  const grupoA = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="A");
-  const grupoB = jugadores.filter(p=>(cat==="JR"?p.grupoJR:p.grupoMAY)==="B");
-
-  // Caso normal: Top2 de A y Top2 de B
-  if(grupoA.length >= 2 && grupoB.length >= 2){
-    const A1 = grupoA[0], A2 = grupoA[1];
-    const B1 = grupoB[0], B2 = grupoB[1];
-
-    state.torneo[cat].seed = { A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id, mode:"AB" };
-  } else {
-    // Fallback justo: Top 4 global
-    const top4 = jugadores.slice(0,4);
-    state.torneo[cat].seed = { T1:top4[0].id, T2:top4[1].id, T3:top4[2].id, T4:top4[3].id, mode:"TOP4" };
+  // ✅ CASO 2: directo a FINAL
+  if(jugadores.length === 2){
+    state.torneo[cat].seed = { mode:"TWO", P1: jugadores[0].id, P2: jugadores[1].id };
+    state.torneo[cat].semi1 = null;
+    state.torneo[cat].semi2 = null;
+    state.torneo[cat].final = null;
+    state.torneo[cat].finalTimeSec = null;
+    saveState();
+    return renderTorneo();
   }
 
-  state.torneo[cat].semi1 = null;
-  state.torneo[cat].semi2 = null;
-  state.torneo[cat].final = null;
-  state.torneo[cat].finalTimeSec = null;
+  // ✅ CASO 3: 1 a FINAL, 2 juegan SEMI
+  if(jugadores.length === 3){
+    state.torneo[cat].seed = {
+      mode:"THREE",
+      BYE: jugadores[0].id, // mejor tiempo directo a final
+      S1: jugadores[1].id,  // juegan semi
+      S2: jugadores[2].id
+    };
+    state.torneo[cat].semi1 = null; // ganador de esa semi
+    state.torneo[cat].semi2 = null;
+    state.torneo[cat].final = null;
+    state.torneo[cat].finalTimeSec = null;
+    saveState();
+    return renderTorneo();
+  }
+
+  // ✅ CASO 4+ (tu lógica actual)
+  const grupoA = jugadores.filter(p => (cat==="JR" ? p.grupoJR : p.grupoMAY) === "A");
+  const grupoB = jugadores.filter(p => (cat==="JR" ? p.grupoJR : p.grupoMAY) === "B");
+
+if(grupoA.length >= 2 && grupoB.length >= 2){
+  const A1 = grupoA[0], A2 = grupoA[1];
+  const B1 = grupoB[0], B2 = grupoB[1];
+
+  const clasificados = [A1.id, A2.id, B1.id, B2.id];
+  const noClasificados = jugadores
+    .filter(p => !clasificados.includes(p.id))
+    .map(p => p.id);
+
+  state.torneo[cat].seed = {
+    A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id,
+    mode:"AB",
+    noClasificados
+  };
+} else {
+  const top4 = jugadores.slice(0,4);
+
+  const clasificados = top4.map(p=>p.id);
+  const noClasificados = jugadores
+    .filter(p => !clasificados.includes(p.id))
+    .map(p => p.id);
+
+  state.torneo[cat].seed = {
+    T1:top4[0].id, T2:top4[1].id, T3:top4[2].id, T4:top4[3].id,
+    mode:"TOP4",
+    noClasificados
+  };
+}
+
 
   saveState();
   renderTorneo();
@@ -890,49 +932,58 @@ function generarLlaves(){
 
 function renderTorneo(){
   const cat = selCatTorneo.value;
-  const t = state.torneo[cat];
+    const t = state.torneo[cat];
   const seed = t.seed;
+// ✅ Reset UI siempre (evita mezclar JR/MAY)
+boxSeleccionados.innerHTML = "";
+boxCampeon.innerHTML = "";
 
-  const boxSel = document.getElementById("boxSeleccionados");
-  const boxChamp = document.getElementById("boxCampeon");
-  boxChamp.innerHTML = "";
-  boxSel.innerHTML = `<div class="muted">—</div>`;
+winSemi1.innerHTML = `<option value="">—</option>`;
+winSemi2.innerHTML = `<option value="">—</option>`;
+winFinal.innerHTML = `<option value="">—</option>`;
 
-  const s1p1 = document.getElementById("s1p1");
-  const s1p2 = document.getElementById("s1p2");
-  const s2p1 = document.getElementById("s2p1");
-  const s2p2 = document.getElementById("s2p2");
-  const fp1  = document.getElementById("fp1");
-  const fp2  = document.getElementById("fp2");
-
-  const winSemi1 = document.getElementById("winSemi1");
-  const winSemi2 = document.getElementById("winSemi2");
-  const winFinal = document.getElementById("winFinal");
-const finalTime = document.getElementById("finalTime");
+winSemi1.disabled = false;
+winSemi2.disabled = false;
+winFinal.disabled = false;
 
 
-  // Reset selects
-  [winSemi1,winSemi2,winFinal].forEach(sel=>{
-    sel.innerHTML = `<option value="">—</option>`;
-  });
-
-  if(!seed){
-    s1p1.textContent = "—"; s1p2.textContent="—";
-    s2p1.textContent = "—"; s2p2.textContent="—";
-    fp1.textContent = "—"; fp2.textContent="—";
-    return;
-  }
-
-  const seed = t.seed;
-
-if(!seed){
+ if(!seed){
   s1p1.textContent = "—"; s1p2.textContent="—";
   s2p1.textContent = "—"; s2p2.textContent="—";
   fp1.textContent = "—"; fp2.textContent="—";
+  finalTime.value = "";
+  finalTime.disabled = true;
   return;
 }
+// ✅ Mostrar SOLO no clasificados
+boxSeleccionados.innerHTML = "";
 
-let p1, p2, p3, p4;
+if(seed.noClasificados?.length){
+  seed.noClasificados.forEach(id=>{
+    const p = findPilot(id);
+    if(!p) return;
+    const d = document.createElement("div");
+    d.className = "chip warn";
+    d.textContent = `No clasificó: ${p.nombre} • ${fmtTiempo(p.timeSec)}`;
+    boxSeleccionados.appendChild(d);
+  });
+} else {
+  const d = document.createElement("div");
+  d.className = "muted small";
+  d.textContent = "Todos clasificaron (no hay no clasificados).";
+  boxSeleccionados.appendChild(d);
+}
+
+
+
+let p1=null, p2=null, p3=null, p4=null;
+
+const semi1Title = document.querySelector("#mSemi1 .title span:last-child");
+const semi2Title = document.querySelector("#mSemi2 .title span:last-child");
+
+// Reset titles
+semi1Title.textContent = "";
+semi2Title.textContent = "";
 
 // 🔵 MODO NORMAL A/B
 if(seed.mode === "AB"){
@@ -941,16 +992,11 @@ if(seed.mode === "AB"){
   const B1 = findPilot(seed.B1);
   const B2 = findPilot(seed.B2);
 
-  // SF1: A1 vs B2
-  p1 = A1;
-  p2 = B2;
+  p1 = A1; p2 = B2; // SF1
+  p3 = B1; p4 = A2; // SF2
 
-  // SF2: B1 vs A2
-  p3 = B1;
-  p4 = A2;
-
-  document.querySelector("#mSemi1 .title span:last-child").textContent = "A1 vs B2";
-  document.querySelector("#mSemi2 .title span:last-child").textContent = "B1 vs A2";
+  semi1Title.textContent = "A1 vs B2";
+  semi2Title.textContent = "B1 vs A2";
 }
 
 // 🔴 MODO TOP 4 GLOBAL
@@ -960,17 +1006,119 @@ if(seed.mode === "TOP4"){
   const T3 = findPilot(seed.T3);
   const T4 = findPilot(seed.T4);
 
-  // SF1: 1 vs 4
-  p1 = T1;
-  p2 = T4;
+  p1 = T1; p2 = T4; // SF1
+  p3 = T2; p4 = T3; // SF2
 
-  // SF2: 2 vs 3
-  p3 = T2;
-  p4 = T3;
-
-  document.querySelector("#mSemi1 .title span:last-child").textContent = "1 vs 4";
-  document.querySelector("#mSemi2 .title span:last-child").textContent = "2 vs 3";
+  semi1Title.textContent = "1 vs 4";
+  semi2Title.textContent = "2 vs 3";
 }
+
+// ✅ MODO 3 (bye a final + semi única)
+if(seed.mode === "THREE"){
+  const BYE = findPilot(seed.BYE);
+  const S1 = findPilot(seed.S1);
+  const S2 = findPilot(seed.S2);
+
+  // Usamos SOLO Semi1 como "Playoff"
+  p1 = S1; p2 = S2;
+  p3 = null; p4 = null;
+
+  semi1Title.textContent = "Playoff (2 vs 3)";
+  semi2Title.textContent = "— (no aplica)";
+
+  // Pintar SF1
+  s1p1.textContent = labelPilot(p1);
+  s1p2.textContent = labelPilot(p2);
+
+  // SF2 vacío
+  s2p1.textContent = "—";
+  s2p2.textContent = "—";
+
+  // Selects: Semi1 sí, Semi2 no
+  winSemi1.innerHTML = `<option value="">—</option>`;
+  winSemi2.innerHTML = `<option value="">—</option>`;
+  winSemi2.disabled = true;
+
+  addOpt(winSemi1, p1);
+  addOpt(winSemi1, p2);
+
+  if(t.semi1) winSemi1.value = t.semi1;
+
+  // Final: BYE vs ganador Semi1
+  const f1 = BYE;
+  const f2 = t.semi1 ? findPilot(t.semi1) : null;
+
+  fp1.textContent = f1 ? labelPilot(f1) : "—";
+  fp2.textContent = f2 ? labelPilot(f2) : "—";
+
+  winFinal.innerHTML = `<option value="">—</option>`;
+  if(f1 && f2){
+    addOpt(winFinal, f1);
+    addOpt(winFinal, f2);
+    if(t.final) winFinal.value = t.final;
+  }
+
+  // Tiempo final (igual que tienes)
+  finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
+  finalTime.disabled = !state.torneo[cat].final;
+
+  // Handlers
+  winSemi1.onchange = ()=>{
+    state.torneo[cat].semi1 = winSemi1.value || null;
+    if(state.torneo[cat].final && ![seed.BYE, state.torneo[cat].semi1].includes(state.torneo[cat].final)){
+      state.torneo[cat].final = null;
+    }
+    saveState(); renderTorneo();
+  };
+
+  winFinal.onchange = ()=>{
+    state.torneo[cat].final = winFinal.value || null;
+    saveState(); renderTorneo();
+  };
+
+  // Campeón card (deja tu bloque tal cual, funciona)
+  return;
+}
+
+// ✅ MODO 2 (directo a final, sin semis)
+if(seed.mode === "TWO"){
+  const P1 = findPilot(seed.P1);
+  const P2 = findPilot(seed.P2);
+
+  // Semis vacías
+  s1p1.textContent = "—";
+  s1p2.textContent = "—";
+  s2p1.textContent = "—";
+  s2p2.textContent = "—";
+
+  winSemi1.innerHTML = `<option value="">—</option>`;
+  winSemi2.innerHTML = `<option value="">—</option>`;
+  winSemi1.disabled = true;
+  winSemi2.disabled = true;
+
+  // Final directa
+  fp1.textContent = labelPilot(P1);
+  fp2.textContent = labelPilot(P2);
+
+  winFinal.innerHTML = `<option value="">—</option>`;
+  addOpt(winFinal, P1);
+  addOpt(winFinal, P2);
+  if(t.final) winFinal.value = t.final;
+
+  finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
+  finalTime.disabled = !state.torneo[cat].final;
+
+  winFinal.onchange = ()=>{
+    state.torneo[cat].final = winFinal.value || null;
+    saveState(); renderTorneo();
+  };
+
+  return;
+}
+
+// (Si llega aquí, son modos AB o TOP4: tu flujo actual sigue normal)
+winSemi2.disabled = false;
+
 
 // Pintar nombres
 s1p1.textContent = labelPilot(p1);
