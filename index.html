@@ -288,7 +288,55 @@ td{
   font-size:14px;
   margin-left:8px;
 }
+/* --- Cronómetro (header derecha) --- */
+.cronometro-panel{
+  width: 260px;
+  text-align: center;
+  padding: 10px 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+}
 
+.cronometro-panel h3{
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#display{
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 6px 0 10px 0;
+}
+
+.cronometro-botones{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.cronometro-botones button{
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.layout-main{
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.col-der{
+  position: sticky;
+  top: 10px;
+}
+.cronometro-panel{
+  float: right;
+  margin-left: 20px;
+  width: 300px;
+}
   </style>
 </head>
 <body>
@@ -300,218 +348,245 @@ td{
 
     </div>
     <img src="logo-f1.png" class="logo-f1" alt="F1 Logo">
+</div>
   </div>
 </header>
 
 <main>
-  <div class="tabs no-print">
-    <button class="tab active" data-tab="pilotos">Pilotos</button>
-    <button class="tab" data-tab="clasificacion">Clasificación</button>
-    <button class="tab" data-tab="torneo">Torneo</button>
-  </div>
+  <div class="layout-main">
 
-  <!-- PILOTOS -->
-  <section id="pilotos" class="grid">
-    <div class="card">
-      <div class="row">
-        <div style="min-width:220px;flex:1">
-          <label>Nombre del piloto</label>
-          <input id="inNombre" type="text" placeholder="Ej: Sofía" />
-        </div>
-        <div style="width:160px">
-          <label>Edad</label>
-          <input id="inEdad" type="number" min="0" max="18" placeholder="Ej: 6" />
-        </div>
-        <div style="width:220px">
-          <label>Experiencia (opcional)</label>
-          <select id="inExp">
-            <option value="0">0 — Nunca jugó</option>
-            <option value="1">1 — Básico</option>
-            <option value="2">2 — Avanzado</option>
-          </select>
-        </div>
-        <button class="btn primary" id="btnAgregar">Agregar piloto</button>
+    <!-- IZQUIERDA: todo tu contenido normal -->
+    <div class="col-izq">
 
-        <span class="right"></span>
-        <button class="btn" id="btnGuardar">Guardar</button>
-        <button class="btn warn" id="btnReset">Reiniciar todo</button>
+      <div class="tabs no-print">
+        <button class="tab active" data-tab="pilotos">Pilotos</button>
+        <button class="tab" data-tab="clasificacion">Clasificación</button>
+        <button class="tab" data-tab="torneo">Torneo</button>
       </div>
 
-      <div class="small muted" style="margin-top:10px">
-        Categorías: <b>JR</b> (0 a 7 años) • <b>Mayores</b> (más de 7). Se auto-asignan por edad y tiempo de carrera.
-      </div>
+      <!-- PILOTOS -->
+      <section id="pilotos" class="grid">
+        <div class="card">
+          <div class="row">
+<div style="margin-left:auto; width:320px;">
+  <div class="cronometro-panel">
+    <h3>⏱ Cronómetro Oficial</h3>
+    <div id="display">00:00.00</div>
+
+    <div class="cronometro-botones">
+      <button id="btnStart">Iniciar</button>
+      <button id="btnPause">Pausar</button>
+      <button id="btnMark">Marcar Tiempo</button>
+      <button id="btnResetCrono">Reiniciar</button>
     </div>
+  </div>
+</div>
+            <div style="min-width:220px;flex:1">
+              <label>Nombre del piloto</label>
+              <input id="inNombre" type="text" placeholder="Ej: Sofía" />
+            </div>
 
-    <div class="card">
-      <div class="row no-print">
-        <div style="width:260px">
-          <label>Acción rápida</label>
-          <select id="selAutoModo">
-            <option value="porCategoria">Auto asignar A/B por categoría (recomendado)</option>
-            <option value="todoJunto">Auto asignar A/B con todos juntos</option>
-          </select>
-        </div>
-        <button class="btn good" id="btnAutoAsignar">Auto asignar Grupos A/B (equilibrado)</button>
-        <button class="btn" id="btnImprimirPilotos">Imprimir</button>
-        <button class="btn" id="btnCSV">Exportar CSV</button>
-      </div>
+            <div style="width:160px">
+              <label>Edad</label>
+              <input id="inEdad" type="number" min="0" max="18" placeholder="Ej: 6" />
+            </div>
 
-      <div class="split" style="margin-top:10px">
-        <div>
-          <div class="row" style="margin-bottom:8px">
-            <b>Listado de pilotos</b>
-            <span class="chip" id="chipTotal">0</span>
+            <div style="width:220px">
+              <label>Experiencia (opcional)</label>
+              <select id="inExp">
+                <option value="0">0 — Nunca jugó</option>
+                <option value="1">1 — Básico</option>
+                <option value="2">2 — Avanzado</option>
+              </select>
+            </div>
+
+            <button class="btn primary" id="btnAgregar">Agregar piloto</button>
+
+            <span class="right"></span>
+            <button class="btn" id="btnGuardar">Guardar</button>
+            <button class="btn warn" id="btnReset">Reiniciar todo</button>
           </div>
-          <table id="tblPilotos">
+
+          <div class="small muted" style="margin-top:10px">
+            Categorías: <b>JR</b> (0 a 7 años) • <b>Mayores</b> (más de 7). Se auto-asignan por edad y tiempo de carrera.
+          </div>
+        </div>
+
+        <div class="card">
+
+          <div class="row no-print">
+            <div style="width:260px">
+              <label>Acción rápida</label>
+              <select id="selAutoModo">
+                <option value="porCategoria">Auto asignar A/B por categoría (recomendado)</option>
+                <option value="todoJunto">Auto asignar A/B con todos juntos</option>
+              </select>
+            </div>
+
+            <button class="btn good" id="btnAutoAsignar">Auto asignar Grupos A/B (equilibrado)</button>
+            <button class="btn" id="btnImprimirPilotos">Imprimir</button>
+            <button class="btn" id="btnCSV">Exportar CSV</button>
+          </div>
+
+          <div class="split" style="margin-top:10px">
+            <div>
+              <div class="row" style="margin-bottom:8px">
+                <b>Listado de pilotos</b>
+                <span class="chip" id="chipTotal">0</span>
+              </div>
+
+              <table id="tblPilotos">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Edad</th>
+                    <th>Categoría</th>
+                    <th>Tiempo (mm:ss.ms)</th>
+                    <th>Grupo</th>
+                    <th class="no-print">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div>
+              <div class="row" style="margin-bottom:8px">
+                <b>Notas rápidas</b>
+              </div>
+
+              <div class="notes-card">
+                <div class="kpi">
+                  <div class="box"><b id="kpiJR">0</b><span>Pilotos JR</span></div>
+                  <div class="box"><b id="kpiMay">0</b><span>Pilotos Mayores</span></div>
+                  <div class="box"><b id="kpiA">0</b><span>En Grupo A</span></div>
+                  <div class="box"><b id="kpiB">0</b><span>En Grupo B</span></div>
+                </div>
+
+                <div class="muted small" style="margin-top:10px;line-height:1.4">
+                  <b>Cómo equilibra el sistema:</b><br/>
+                  Ordena por tiempo (mejor → peor). Luego forma pares: (1º + último), (2º + penúltimo), etc.
+                  Asigna el primer par al Grupo A, el segundo par al Grupo B, y así sucesivamente, manteniendo tamaños lo más iguales posible.
+                  <br/><br/>
+                  Si un niño no tiene tiempo, se considera “sin tiempo” y se coloca al final (para no favorecerlo injustamente).
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CLASIFICACION -->
+      <section id="clasificacion" class="grid" style="display:none">
+        <div class="card">
+          <div class="row no-print">
+            <div style="width:220px">
+              <label>Ver categoría</label>
+              <select id="selCatView">
+                <option value="ALL">Todas</option>
+                <option value="JR">JR (0–7)</option>
+                <option value="MAY">Mayores (&gt;7)</option>
+              </select>
+            </div>
+            <button class="btn" id="btnOrdenar">Ordenado por tiempo</button>
+            <button class="btn good" id="btnAutoAsignar2">Auto asignar Grupos A/B (equilibrado)</button>
+            <button class="btn" id="btnImprimirClas">Imprimir</button>
+          </div>
+
+          <div class="print-note"><b>Gran Premio de MABÁM — Clasificación</b></div>
+
+          <table id="tblClas">
             <thead>
               <tr>
+                <th>#</th>
                 <th>Nombre</th>
                 <th>Edad</th>
                 <th>Categoría</th>
-                <th>Tiempo (mm:ss.ms)</th>
+                <th>Tiempo</th>
                 <th>Grupo</th>
-                <th class="no-print">Acciones</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
-        </div>
 
-        <div>
-          <div class="row" style="margin-bottom:8px">
-            <b>Notas rápidas</b>
+          <div class="muted small" style="margin-top:10px">
+            Tip: escribe tiempos como <b>1:23.45</b> o en segundos <b>83.45</b>.
           </div>
-          <div class="notes-card">
+        </div>
+      </section>
 
-            <div class="kpi">
-              <div class="box"><b id="kpiJR">0</b><span>Pilotos JR</span></div>
-              <div class="box"><b id="kpiMay">0</b><span>Pilotos Mayores</span></div>
-              <div class="box"><b id="kpiA">0</b><span>En Grupo A</span></div>
-              <div class="box"><b id="kpiB">0</b><span>En Grupo B</span></div>
+      <!-- TORNEO -->
+      <section id="torneo" class="grid" style="display:none">
+        <div class="card">
+          <div class="row no-print">
+            <div style="width:240px">
+              <label>Categoria del torneo</label>
+              <select id="selCatTorneo">
+                <option value="JR">JR (0–7)</option>
+                <option value="MAY">Mayores (&gt;7)</option>
+              </select>
             </div>
-            <div class="muted small" style="margin-top:10px;line-height:1.4">
-              <b>Cómo equilibra el sistema:</b><br/>
-              Ordena por tiempo (mejor → peor). Luego forma pares: (1º + último), (2º + penúltimo), etc.
-              Asigna el primer par al Grupo A, el segundo par al Grupo B, y así sucesivamente, manteniendo tamaños lo más iguales posible.
-              <br/><br/>
-              Si un niño no tiene tiempo, se considera “sin tiempo” y se coloca al final (para no favorecerlo injustamente).
+            <button class="btn primary" id="btnGenerarLlaves">Generar llaves (Top 2 de A y B)</button>
+            <button class="btn" id="btnImprimirTorneo">Imprimir</button>
+          </div>
+
+          <div class="muted small" style="margin-top:8px;line-height:1.4">
+            Requisitos: tener tiempos cargados y grupos A/B asignados (por categoría). Se toman los <b>2 mejores</b> de cada grupo.
+            Semis: <b>A1 vs B2</b> y <b>B1 vs A2</b>. Final: ganadores.
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="card">
+            <b>Participantes no clasificados</b>
+            <div class="muted small" style="margin-top:8px">Tiempos más altos en la clasificación.</div>
+            <div id="boxSeleccionados" style="margin-top:10px"></div>
+          </div>
+
+          <div class="card">
+            <b>Eliminatorias</b>
+            <div class="bracket" style="margin-top:10px">
+              <div class="match" id="mSemi1">
+                <div class="title"><span>Semifinal 1</span><span class="muted">A1 vs B2</span></div>
+                <div class="line"><span id="s1p1" class="muted">—</span><span class="muted">vs</span><span id="s1p2" class="muted">—</span></div>
+                <label class="small">Ganador</label>
+                <select id="winSemi1"><option value="">—</option></select>
+              </div>
+
+              <div class="match" id="mSemi2">
+                <div class="title"><span>Semifinal 2</span><span class="muted">B1 vs A2</span></div>
+                <div class="line"><span id="s2p1" class="muted">—</span><span class="muted">vs</span><span id="s2p2" class="muted">—</span></div>
+                <label class="small">Ganador</label>
+                <select id="winSemi2"><option value="">—</option></select>
+              </div>
+
+              <div class="match" id="mFinal">
+                <div class="title"><span>Final</span><span class="muted">Ganador SF1 vs Ganador SF2</span></div>
+                <div class="line"><span id="fp1" class="muted">—</span><span class="muted">vs</span><span id="fp2" class="muted">—</span></div>
+
+                <label class="small">Campeón</label>
+                <select id="winFinal"><option value="">—</option></select>
+
+                <div style="height:8px"></div>
+                <label class="small">Tiempo de carrera (FINAL)</label>
+                <input id="finalTime" placeholder="0:00:00 - 00:00" style="width:100%" />
+              </div>
             </div>
+
+            <div class="row no-print" style="margin-top:10px">
+              <button class="btn good" id="btnGuardarTorneo">Guardar resultados</button>
+              <button class="btn danger" id="btnLimpiarTorneo">Limpiar llaves</button>
+            </div>
+
+            <div id="boxCampeon" style="margin-top:10px"></div>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <!-- CLASIFICACION -->
-  <section id="clasificacion" class="grid" style="display:none">
-    <div class="card">
-      <div class="row no-print">
-        <div style="width:220px">
-          <label>Ver categoría</label>
-          <select id="selCatView">
-            <option value="ALL">Todas</option>
-            <option value="JR">JR (0–7)</option>
-            <option value="MAY">Mayores (&gt;7)</option>
-          </select>
-        </div>
-        <button class="btn" id="btnOrdenar">Ordenado por tiempo</button>
-        <button class="btn good" id="btnAutoAsignar2">Auto asignar Grupos A/B (equilibrado)</button>
-        <button class="btn" id="btnImprimirClas">Imprimir</button>
-      </div>
-
-      <div class="print-note"><b>Gran Premio de MABÁM — Clasificación</b></div>
-
-      <table id="tblClas">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Edad</th>
-            <th>Categoría</th>
-            <th>Tiempo</th>
-            <th>Grupo</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <div class="muted small" style="margin-top:10px">
-        Tip: escribe tiempos como <b>1:23.45</b> o en segundos <b>83.45</b>.
-      </div>
-    </div>
-  </section>
-
-  <!-- TORNEO -->
-  <section id="torneo" class="grid" style="display:none">
-    <div class="card">
-      <div class="row no-print">
-        <div style="width:240px">
-          <label>Categoria del torneo</label>
-          <select id="selCatTorneo">
-            <option value="JR">JR (0–7)</option>
-            <option value="MAY">Mayores (&gt;7)</option>
-          </select>
-        </div>
-        <button class="btn primary" id="btnGenerarLlaves">Generar llaves (Top 2 de A y B)</button>
-        <button class="btn" id="btnImprimirTorneo">Imprimir</button>
-      </div>
-
-      <div class="muted small" style="margin-top:8px;line-height:1.4">
-        Requisitos: tener tiempos cargados y grupos A/B asignados (por categoría). Se toman los <b>2 mejores</b> de cada grupo.
-        Semis: <b>A1 vs B2</b> y <b>B1 vs A2</b>. Final: ganadores.
-      </div>
     </div>
 
-    <div class="two">
-      <div class="card">
-        <b>Participantes no clasificados</b>
-        <div class="muted small" style="margin-top:8px">Tiempos más altos en la clasificación.</div>
-        <div id="boxSeleccionados" style="margin-top:10px"></div>
-      </div>
-
-      <div class="card">
-        <b>Eliminatorias</b>
-        <div class="bracket" style="margin-top:10px">
-          <div class="match" id="mSemi1">
-            <div class="title"><span>Semifinal 1</span><span class="muted">A1 vs B2</span></div>
-            <div class="line"><span id="s1p1" class="muted">—</span><span class="muted">vs</span><span id="s1p2" class="muted">—</span></div>
-            <label class="small">Ganador</label>
-            <select id="winSemi1"><option value="">—</option></select>
-          </div>
-
-          <div class="match" id="mSemi2">
-            <div class="title"><span>Semifinal 2</span><span class="muted">B1 vs A2</span></div>
-            <div class="line"><span id="s2p1" class="muted">—</span><span class="muted">vs</span><span id="s2p2" class="muted">—</span></div>
-            <label class="small">Ganador</label>
-            <select id="winSemi2"><option value="">—</option></select>
-          </div>
-
-          <div class="match" id="mFinal">
-  <div class="title"><span>Final</span><span class="muted">Ganador SF1 vs Ganador SF2</span></div>
-  <div class="line"><span id="fp1" class="muted">—</span><span class="muted">vs</span><span id="fp2" class="muted">—</span></div>
-
-  <label class="small">Campeón</label>
-  <select id="winFinal"><option value="">—</option></select>
-
-  <div style="height:8px"></div>
-  <label class="small">Tiempo de carrera (FINAL)</label>
-  <input id="finalTime" placeholder="0:00:00 - 00:00" style="width:100%" />
-</div>
-
-        </div>
-
-        <div class="row no-print" style="margin-top:10px">
-          <button class="btn good" id="btnGuardarTorneo">Guardar resultados</button>
-          <button class="btn danger" id="btnLimpiarTorneo">Limpiar llaves</button>
-        </div>
-
-        <div id="boxCampeon" style="margin-top:10px"></div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<script>
+    
+</main><script>
 /** =========================
  *  Estado + Persistencia
  *  ========================= */
