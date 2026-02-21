@@ -337,6 +337,46 @@ td{
   margin-left: 20px;
   width: 300px;
 }
+.final-full {
+  grid-column: 1 / -1;
+  max-width: 600px;
+  margin: 0 auto;
+}
+/* Hace que la tarjeta de la final ocupe TODO el ancho del grid y se centre */
+.final-full {
+  grid-column: 1 / -1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+/* Centrar la tarjeta GRAN FINAL pase lo que pase */
+#mFinal{
+  max-width: 700px !important;
+  margin: 0 auto !important;
+}
+
+/* Si el layout es GRID, fuerza que ocupe toda la fila */
+#mFinal{
+  grid-column: 1 / -1 !important;
+  justify-self: center !important;
+}
+
+/* Si el layout es FLEX, evita que se estire raro y céntralo */
+#mFinal{
+  flex: 0 1 700px !important;
+  align-self: center !important;
+}
+/* Centrar cualquier columna que contenga la final */
+#torneoPanel, .torneo-grid, .torneo-cols, .cols, .grid, .row{
+  /* no rompe si no existe */
+}
+
+#torneoPanel{
+  display: block;
+}
+
+#mFinal{
+  display: block;
+}
   </style>
 </head>
 <body>
@@ -442,7 +482,6 @@ td{
                     <th>Edad</th>
                     <th>Categoría</th>
                     <th>Tiempo (mm:ss.ms)</th>
-                    <th>Grupo</th>
                     <th class="no-print">Acciones</th>
                   </tr>
                 </thead>
@@ -526,7 +565,7 @@ td{
                 <option value="MAY">Mayores (&gt;7)</option>
               </select>
             </div>
-            <button class="btn primary" id="btnGenerarLlaves">Generar llaves (Top 2 de A y B)</button>
+            <button class="btn primary" id="btnGenerarLlaves">Generar Final</button>
             <button class="btn" id="btnImprimirTorneo">Imprimir</button>
           </div>
 
@@ -544,7 +583,7 @@ td{
           </div>
 
           <div class="card">
-            <b>Eliminatorias</b>
+            			<b>🏆GRAN FINAL🏆</b>
             <div class="bracket" style="margin-top:10px">
               <div class="match" id="mSemi1">
                 <div class="title"><span>Semifinal 1</span><span class="muted">A1 vs B2</span></div>
@@ -552,7 +591,7 @@ td{
                 <label class="small">Ganador</label>
                 <select id="winSemi1"><option value="">—</option></select>
               </div>
-
+<div class="card" id="mFinal">
               <div class="match" id="mSemi2">
                 <div class="title"><span>Semifinal 2</span><span class="muted">B1 vs A2</span></div>
                 <div class="line"><span id="s2p1" class="muted">—</span><span class="muted">vs</span><span id="s2p2" class="muted">—</span></div>
@@ -586,7 +625,8 @@ td{
     </div>
 
     
-</main><script>
+</main>
+<script>
 /** =========================
  *  Estado + Persistencia
  *  ========================= */
@@ -615,23 +655,37 @@ function uid(){ return Math.random().toString(16).slice(2) + Date.now().toString
 function categoriaPorEdad(edad){
   return (Number(edad) <= 7) ? "JR" : "MAY";
 }
-function parseTiempoToSec(raw){
-  if(raw == null) return null;
-  const s = String(raw).trim();
-  if(!s) return null;
+function parseTiempoToSec(v){
+  const s = String(v ?? "").trim();
+  if (!s) return null;
 
-  // Permite "83.45"
-  if(/^\d+(\.\d+)?$/.test(s)) return Number(s);
+  // 1) SOLO DÍGITOS => mmsscc (compacto)
+  // "10000" -> 01:00.00  | "12503" -> 01:25.03
+  if (/^\d+$/.test(s)) {
+    const d = s.slice(0, 6).padStart(6, "0");
+    const min = parseInt(d.slice(0, 2), 10);
+    const sec = parseInt(d.slice(2, 4), 10);
+    const cs  = parseInt(d.slice(4, 6), 10);
+    if (sec > 59) return null; // evita 01:99.00
+    return (min * 60) + sec + (cs / 100);
+  }
 
-  // Permite "m:ss.ms" o "mm:ss" o "m:ss"
-  // Ej: 1:23.45
-  const m = s.match(/^(\d+):([0-5]?\d)(\.\d+)?$/);
-  if(!m) return null;
-  const min = Number(m[1]);
-  const sec = Number(m[2]);
-  const ms = m[3] ? Number(m[3]) : 0;
-  return (min*60) + sec + ms;
+  // 2) mm:ss.cc (o m:ss.cc)
+  const m = s.match(/^(\d+):([0-5]\d)\.(\d{1,2})$/);
+  if (m) {
+    const min = parseInt(m[1], 10);
+    const sec = parseInt(m[2], 10);
+    const cs  = parseInt(m[3].padEnd(2, "0"), 10);
+    return (min * 60) + sec + (cs / 100);
+  }
+
+  // 3) segundos con decimales (formato viejo): 83.45
+  const n = Number(s.replace(",", "."));
+  if (Number.isFinite(n)) return n;
+
+  return null;
 }
+
 function fmtTiempo(sec){
   if(sec == null || !isFinite(sec)) return "—";
   const total = Number(sec);
@@ -808,9 +862,6 @@ document.getElementById("btnImprimirClas").addEventListener("click", () => {
 });
 
 
-
-
-
 function renderPilotos(){
   tbodyPilotos.innerHTML = "";
   const pilotos = [...state.pilotos].sort((a,b)=>a.nombre.localeCompare(b.nombre));
@@ -824,9 +875,9 @@ function renderPilotos(){
       <td>${p.edad}</td>
       <td>${chipCat(cat)}</td>
       <td>
-        <input data-id="${p.id}" class="inTiempo" placeholder="1:23.45 ó 83.45" value="${p.timeSec==null?"":fmtTiempo(p.timeSec)}" style="width:160px"/>
+        <input data-id="${p.id}" class="inTiempo" placeholder="1:00:00 ó 1:00" value="${p.timeSec==null?"":fmtTiempo(p.timeSec)}" style="width:160px"/>
       </td>
-      <td>${renderGrupo(p, cat)}</td>
+     
       <td class="no-print">
         <button class="btn danger btnDel" data-id="${p.id}">Eliminar</button>
       </td>
@@ -900,25 +951,20 @@ function renderClasificacion(){
       <td>${idx+1}</td>
       <td>
   <b>${escapeHtml(p.nombre)}</b>
-${idx===0 ? `<span class="badge">🥇</span>` : ""}
-${idx===1 ? `<span class="badge">🥈</span>` : ""}
-${idx===2 ? `<span class="badge">🥉</span>` : ""}
+
 
 </td>
 
       <td>${p.edad}</td>
       <td>${chipCat(cat)}</td>
       <td>${fmtTiempo(p.timeSec)}</td>
-      <td>${renderGrupo(p, cat)}</td>
-    `;
+       `;
     tbodyClas.appendChild(tr);
   });
 }
 
-function renderGrupo(p, cat){
-  const g = (cat==="JR") ? p.grupoJR : p.grupoMAY;
-  if(!g) return `<span class="muted">—</span>`;
-  return `<span class="chip ${g==="A"?"good":"warn"}">Grupo ${g}</span>`;
+function renderGrupo(){
+  return ""; // grupos desactivados
 }
 
 function chipCat(cat){
@@ -948,7 +994,12 @@ document.getElementById("btnLimpiarTorneo").addEventListener("click", ()=>{
 document.getElementById("btnImprimirTorneo").addEventListener("click", ()=>window.print());
 
 function generarLlaves(){
+
   const cat = selCatTorneo.value;
+
+  if(!state.torneo[cat]){
+    state.torneo[cat] = {};
+  }
 
   const jugadores = state.pilotos
     .filter(p => categoriaPorEdad(p.edad) === cat)
@@ -959,347 +1010,139 @@ function generarLlaves(){
     return alert("Necesitas al menos 2 pilotos con tiempo para generar final.");
   }
 
-  // ✅ CASO 2: directo a FINAL
-  if(jugadores.length === 2){
-    state.torneo[cat].seed = { mode:"TWO", P1: jugadores[0].id, P2: jugadores[1].id };
-    state.torneo[cat].semi1 = null;
-    state.torneo[cat].semi2 = null;
-    state.torneo[cat].final = null;
-    state.torneo[cat].finalTimeSec = null;
-    saveState();
-    return renderTorneo();
-  }
-
-  // ✅ CASO 3: 1 a FINAL, 2 juegan SEMI
-  if(jugadores.length === 3){
-    state.torneo[cat].seed = {
-      mode:"THREE",
-      BYE: jugadores[0].id, // mejor tiempo directo a final
-      S1: jugadores[1].id,  // juegan semi
-      S2: jugadores[2].id
-    };
-    state.torneo[cat].semi1 = null; // ganador de esa semi
-    state.torneo[cat].semi2 = null;
-    state.torneo[cat].final = null;
-    state.torneo[cat].finalTimeSec = null;
-    saveState();
-    return renderTorneo();
-  }
-
-  // ✅ CASO 4+ (tu lógica actual)
-  const grupoA = jugadores.filter(p => (cat==="JR" ? p.grupoJR : p.grupoMAY) === "A");
-  const grupoB = jugadores.filter(p => (cat==="JR" ? p.grupoJR : p.grupoMAY) === "B");
-
-if(grupoA.length >= 2 && grupoB.length >= 2){
-  const A1 = grupoA[0], A2 = grupoA[1];
-  const B1 = grupoB[0], B2 = grupoB[1];
-
-  const clasificados = [A1.id, A2.id, B1.id, B2.id];
-  const noClasificados = jugadores
-    .filter(p => !clasificados.includes(p.id))
-    .map(p => p.id);
+  const finalistas = jugadores.slice(0,2);
+  const noClasificados = jugadores.slice(2).map(p => p.id);
 
   state.torneo[cat].seed = {
-    A1:A1.id, A2:A2.id, B1:B1.id, B2:B2.id,
-    mode:"AB",
+    mode: "FINAL_DIRECTA",
+    P1: finalistas[0].id,
+    P2: finalistas[1].id,
     noClasificados
   };
-} else {
-  const top4 = jugadores.slice(0,4);
 
-  const clasificados = top4.map(p=>p.id);
-  const noClasificados = jugadores
-    .filter(p => !clasificados.includes(p.id))
-    .map(p => p.id);
-
-  state.torneo[cat].seed = {
-    T1:top4[0].id, T2:top4[1].id, T3:top4[2].id, T4:top4[3].id,
-    mode:"TOP4",
-    noClasificados
-  };
-}
-
+  state.torneo[cat].final = null;
+  state.torneo[cat].finalTimeSec = null;
 
   saveState();
   renderTorneo();
 }
 
 function renderTorneo(){
+
   const cat = selCatTorneo.value;
-    const t = state.torneo[cat];
+  const t = state.torneo[cat] || {};
   const seed = t.seed;
-// ✅ Reset UI siempre (evita mezclar JR/MAY)
-boxSeleccionados.innerHTML = "";
-boxCampeon.innerHTML = "";
+// ✅ Ocultar semifinales (ya no se usan)
+const mSemi1 = document.getElementById("mSemi1");
+const mSemi2 = document.getElementById("mSemi2");
+if (mSemi1) mSemi1.style.display = "none";
+if (mSemi2) mSemi2.style.display = "none";
+  const boxChamp = boxCampeon; // ✅ alias primero
 
-winSemi1.innerHTML = `<option value="">—</option>`;
-winSemi2.innerHTML = `<option value="">—</option>`;
-winFinal.innerHTML = `<option value="">—</option>`;
+  if (boxSeleccionados) boxSeleccionados.innerHTML = "";
+  if (boxChamp) boxChamp.innerHTML = "";
 
-winSemi1.disabled = false;
-winSemi2.disabled = false;
-winFinal.disabled = false;
+  // Reset visual (seguro)
+  if (s1p1) s1p1.textContent = "—";
+  if (s1p2) s1p2.textContent = "—";
+  if (s2p1) s2p1.textContent = "—";
+  if (s2p2) s2p2.textContent = "—";
 
+  if (fp1) fp1.textContent = "—";
+  if (fp2) fp2.textContent = "—";
 
- if(!seed){
-  s1p1.textContent = "—"; s1p2.textContent="—";
-  s2p1.textContent = "—"; s2p2.textContent="—";
-  fp1.textContent = "—"; fp2.textContent="—";
-  finalTime.value = "";
-  finalTime.disabled = true;
-  return;
-}
-// ✅ Mostrar SOLO no clasificados
-boxSeleccionados.innerHTML = "";
+  if (winSemi1){ winSemi1.innerHTML = `<option value="">—</option>`; winSemi1.disabled = true; }
+  if (winSemi2){ winSemi2.innerHTML = `<option value="">—</option>`; winSemi2.disabled = true; }
 
-if(seed.noClasificados?.length){
-  seed.noClasificados.forEach(id=>{
-    const p = findPilot(id);
-    if(!p) return;
-    const d = document.createElement("div");
-    d.className = "chip warn";
-    d.textContent = `No clasificó: ${p.nombre} • ${fmtTiempo(p.timeSec)}`;
-    boxSeleccionados.appendChild(d);
-  });
-} else {
-  const d = document.createElement("div");
-  d.className = "muted small";
-  d.textContent = "Todos clasificaron (no hay no clasificados).";
-  boxSeleccionados.appendChild(d);
-}
+  if (winFinal){ winFinal.innerHTML = `<option value="">—</option>`; winFinal.disabled = true; }
+  if (finalTime){ finalTime.value = ""; finalTime.disabled = true; }
 
-
-
-let p1=null, p2=null, p3=null, p4=null;
-
-const semi1Title = document.querySelector("#mSemi1 .title span:last-child");
-const semi2Title = document.querySelector("#mSemi2 .title span:last-child");
-
-// Reset titles
-semi1Title.textContent = "";
-semi2Title.textContent = "";
-
-// 🔵 MODO NORMAL A/B
-if(seed.mode === "AB"){
-  const A1 = findPilot(seed.A1);
-  const A2 = findPilot(seed.A2);
-  const B1 = findPilot(seed.B1);
-  const B2 = findPilot(seed.B2);
-
-  p1 = A1; p2 = B2; // SF1
-  p3 = B1; p4 = A2; // SF2
-
-  semi1Title.textContent = "A1 vs B2";
-  semi2Title.textContent = "B1 vs A2";
-}
-
-// 🔴 MODO TOP 4 GLOBAL
-if(seed.mode === "TOP4"){
-  const T1 = findPilot(seed.T1);
-  const T2 = findPilot(seed.T2);
-  const T3 = findPilot(seed.T3);
-  const T4 = findPilot(seed.T4);
-
-  p1 = T1; p2 = T4; // SF1
-  p3 = T2; p4 = T3; // SF2
-
-  semi1Title.textContent = "1 vs 4";
-  semi2Title.textContent = "2 vs 3";
-}
-
-// ✅ MODO 3 (bye a final + semi única)
-if(seed.mode === "THREE"){
-  const BYE = findPilot(seed.BYE);
-  const S1 = findPilot(seed.S1);
-  const S2 = findPilot(seed.S2);
-
-  // Usamos SOLO Semi1 como "Playoff"
-  p1 = S1; p2 = S2;
-  p3 = null; p4 = null;
-
-  semi1Title.textContent = "Playoff (2 vs 3)";
-  semi2Title.textContent = "— (no aplica)";
-
-  // Pintar SF1
-  s1p1.textContent = labelPilot(p1);
-  s1p2.textContent = labelPilot(p2);
-
-  // SF2 vacío
-  s2p1.textContent = "—";
-  s2p2.textContent = "—";
-
-  // Selects: Semi1 sí, Semi2 no
-  winSemi1.innerHTML = `<option value="">—</option>`;
-  winSemi2.innerHTML = `<option value="">—</option>`;
-  winSemi2.disabled = true;
-
-  addOpt(winSemi1, p1);
-  addOpt(winSemi1, p2);
-
-  if(t.semi1) winSemi1.value = t.semi1;
-
-  // Final: BYE vs ganador Semi1
-  const f1 = BYE;
-  const f2 = t.semi1 ? findPilot(t.semi1) : null;
-
-  fp1.textContent = f1 ? labelPilot(f1) : "—";
-  fp2.textContent = f2 ? labelPilot(f2) : "—";
-
-  winFinal.innerHTML = `<option value="">—</option>`;
-  if(f1 && f2){
-    addOpt(winFinal, f1);
-    addOpt(winFinal, f2);
-    if(t.final) winFinal.value = t.final;
+  // Si no hay seed de final directa, sal
+  if(!seed || seed.mode !== "FINAL_DIRECTA"){
+    return;
   }
 
-  // Tiempo final (igual que tienes)
-  finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
-  finalTime.disabled = !state.torneo[cat].final;
-
-  // Handlers
-  winSemi1.onchange = ()=>{
-    state.torneo[cat].semi1 = winSemi1.value || null;
-    if(state.torneo[cat].final && ![seed.BYE, state.torneo[cat].semi1].includes(state.torneo[cat].final)){
-      state.torneo[cat].final = null;
-    }
-    saveState(); renderTorneo();
-  };
-
-  winFinal.onchange = ()=>{
-    state.torneo[cat].final = winFinal.value || null;
-    saveState(); renderTorneo();
-  };
-
-  // Campeón card (deja tu bloque tal cual, funciona)
-  return;
-}
-
-// ✅ MODO 2 (directo a final, sin semis)
-if(seed.mode === "TWO"){
   const P1 = findPilot(seed.P1);
   const P2 = findPilot(seed.P2);
 
-  // Semis vacías
-  s1p1.textContent = "—";
-  s1p2.textContent = "—";
-  s2p1.textContent = "—";
-  s2p2.textContent = "—";
+  // Mostrar finalistas (AQUÍ estaba tu bug)
+  if (fp1) fp1.textContent = P1 ? labelPilot(P1) : "—";
+  if (fp2) fp2.textContent = P2 ? labelPilot(P2) : "—";
 
-  winSemi1.innerHTML = `<option value="">—</option>`;
-  winSemi2.innerHTML = `<option value="">—</option>`;
-  winSemi1.disabled = true;
-  winSemi2.disabled = true;
+  // Dropdown ganador
+  if (winFinal){
+    winFinal.disabled = false;
+    winFinal.innerHTML = `<option value="">—</option>`;
+    if (P1) addOpt(winFinal, P1);
+    if (P2) addOpt(winFinal, P2);
+    if (t.final) winFinal.value = t.final;
 
-  // Final directa
-  fp1.textContent = labelPilot(P1);
-  fp2.textContent = labelPilot(P2);
-
-  winFinal.innerHTML = `<option value="">—</option>`;
-  addOpt(winFinal, P1);
-  addOpt(winFinal, P2);
-  if(t.final) winFinal.value = t.final;
-
-  finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
-  finalTime.disabled = !state.torneo[cat].final;
-
-  winFinal.onchange = ()=>{
-    state.torneo[cat].final = winFinal.value || null;
-    saveState(); renderTorneo();
-  };
-
-  return;
-}
-
-// (Si llega aquí, son modos AB o TOP4: tu flujo actual sigue normal)
-winSemi2.disabled = false;
-
-
-// Pintar nombres
-s1p1.textContent = labelPilot(p1);
-s1p2.textContent = labelPilot(p2);
-s2p1.textContent = labelPilot(p3);
-s2p2.textContent = labelPilot(p4);
-
-// Limpiar selects
-winSemi1.innerHTML = `<option value="">—</option>`;
-winSemi2.innerHTML = `<option value="">—</option>`;
-
-addOpt(winSemi1, p1);
-addOpt(winSemi1, p2);
-addOpt(winSemi2, p3);
-addOpt(winSemi2, p4);
-
-// Restaurar selección previa
-if(t.semi1) winSemi1.value = t.semi1;
-if(t.semi2) winSemi2.value = t.semi2;
-
-
-  // Finalists display based on semis
-  const f1 = t.semi1 ? findPilot(t.semi1) : null;
-  const f2 = t.semi2 ? findPilot(t.semi2) : null;
-  fp1.textContent = f1 ? labelPilot(f1) : "—";
-  fp2.textContent = f2 ? labelPilot(f2) : "—";
-
-  // Final dropdown only if both finalists selected
-  if(f1 && f2){
-    addOpt(winFinal, f1); addOpt(winFinal, f2);
-    if(t.final) winFinal.value = t.final;
+    winFinal.onchange = ()=>{
+      state.torneo[cat].final = winFinal.value || null;
+      saveState();
+      renderTorneo();
+    };
   }
-// Mostrar/editar tiempo de la FINAL (solo si hay campeón seleccionado)
-finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
-finalTime.disabled = !state.torneo[cat].final;
 
-finalTime.onchange = ()=>{
-  const v = finalTime.value.trim();
-  if(!v){
-    state.torneo[cat].finalTimeSec = null;
-    saveState(); renderTorneo();
-    return;
-  }
-  const sec = parseTiempoToSec(v);
-  if(sec==null || !isFinite(sec)){
-    alert("Tiempo inválido. Usa 1:23.45 o 83.45");
-    finalTime.value = (state.torneo[cat].finalTimeSec==null) ? "" : fmtTiempo(state.torneo[cat].finalTimeSec);
-    return;
-  }
-  state.torneo[cat].finalTimeSec = sec;
-  saveState(); renderTorneo();
-};
+  // Tiempo final
+  if (finalTime){
+    finalTime.value = (t.finalTimeSec==null) ? "" : fmtTiempo(t.finalTimeSec);
+    finalTime.disabled = !state.torneo[cat].final;
 
-  winSemi1.onchange = ()=>{
-    state.torneo[cat].semi1 = winSemi1.value || null;
-    // Si cambia semi, resetea final si ya no aplica
-    if(state.torneo[cat].final && ![state.torneo[cat].semi1, state.torneo[cat].semi2].includes(state.torneo[cat].final)){
-      state.torneo[cat].final = null;
+    finalTime.onchange = ()=>{
+      const v = finalTime.value.trim();
+      if(!v){
+        state.torneo[cat].finalTimeSec = null;
+        saveState(); renderTorneo();
+        return;
+      }
+
+      const sec = parseTiempoToSec(v);
+      if(sec==null || !isFinite(sec)){
+        alert("Tiempo inválido.");
+        finalTime.value = (state.torneo[cat].finalTimeSec==null) ? "" : fmtTiempo(state.torneo[cat].finalTimeSec);
+        return;
+      }
+
+      state.torneo[cat].finalTimeSec = sec;
+      saveState(); renderTorneo();
+    };
+  }
+
+  // No clasificados
+  if (boxSeleccionados){
+    if(seed.noClasificados?.length){
+      seed.noClasificados.forEach(id=>{
+        const p = findPilot(id);
+        if(!p) return;
+        const d = document.createElement("div");
+        d.className = "chip warn";
+        d.textContent = `No clasificó: ${p.nombre} • ${fmtTiempo(p.timeSec)}`;
+        boxSeleccionados.appendChild(d);
+      });
+    } else {
+      const d = document.createElement("div");
+      d.className = "muted small";
+      d.textContent = "Todos clasificaron (no hay no clasificados).";
+      boxSeleccionados.appendChild(d);
     }
-    saveState(); renderTorneo();
-  };
-  winSemi2.onchange = ()=>{
-    state.torneo[cat].semi2 = winSemi2.value || null;
-    if(state.torneo[cat].final && ![state.torneo[cat].semi1, state.torneo[cat].semi2].includes(state.torneo[cat].final)){
-      state.torneo[cat].final = null;
-    }
-    saveState(); renderTorneo();
-  };
-  winFinal.onchange = ()=>{
-    state.torneo[cat].final = winFinal.value || null;
-    saveState(); renderTorneo();
-  };
+  }
 
-  if(state.torneo[cat].final){
+  // Campeón card
+  if(state.torneo[cat].final && boxChamp){
     const champ = findPilot(state.torneo[cat].final);
-    boxChamp.innerHTML = `
-  <div class="champion-card">
-    <div class="title">🏆 Campeón (${cat==="JR"?"JR":"Mayores"})</div>
-    <div class="name">${escapeHtml(champ.nombre)}</div>
-    <div class="meta">Clasificación: ${fmtTiempo(champ.timeSec)}</div>
-    <div class="meta">Final: ${fmtTiempo(state.torneo[cat].finalTimeSec)}</div>
-  </div>
-`;
-
+    if (champ){
+      boxChamp.innerHTML = `
+        <div class="champion-card">
+          <div class="title">🏆 Campeón (${cat==="JR"?"JR":"Mayores"})</div>
+          <div class="name">${escapeHtml(champ.nombre)}</div>
+          <div class="meta">Clasificación: ${fmtTiempo(champ.timeSec)}</div>
+          <div class="meta">Final: ${fmtTiempo(state.torneo[cat].finalTimeSec)}</div>
+        </div>
+      `;
+    }
   }
 }
-
 function findPilot(id){ return state.pilotos.find(p=>p.id===id); }
 function labelPilot(p){ return `${p.nombre} • ${fmtTiempo(p.timeSec)}`; }
 function addOpt(sel, p){
@@ -1346,6 +1189,91 @@ function exportCSV(){
   URL.revokeObjectURL(url);
 }
 
+// ===== AUTOFORMATO finalTime (evita que se trate como "segundos") =====
+function formatTiempoCompacto(raw) {
+  const d = String(raw).replace(/\D/g, "").slice(0, 6);
+  if (!d) return "";
+  const padded = d.padStart(6, "0");
+  const m  = padded.slice(0, 2);
+  const s  = padded.slice(2, 4);
+  const cs = padded.slice(4, 6);
+  return `${m}:${s}.${cs}`; // 01:25.03
+}
+
+const inputFinalTime = document.querySelector("#finalTime");
+
+if (inputFinalTime) {
+  const applyFormat = () => {
+    const onlyDigits = inputFinalTime.value.replace(/\D/g, "");
+    if (!onlyDigits) return;
+    inputFinalTime.value = formatTiempoCompacto(onlyDigits);
+  };
+
+  // Formatea SIEMPRE mientras escribes (clave para que no quede "10000" nunca)
+  inputFinalTime.addEventListener("input", applyFormat, true);
+
+  // Backup por si pegan texto o salen del campo
+  inputFinalTime.addEventListener("blur", applyFormat);
+}
+
+
+
+function parseFinalTimeToMs(v) {
+  const s = String(v).trim();
+
+  // Caso A: ya viene como mm:ss.cc (o m:ss.cc)
+  // Ej: "01:25.03"
+  const m1 = s.match(/^(\d+):([0-5]\d)\.(\d{1,2})$/);
+  if (m1) {
+    const min = parseInt(m1[1], 10);
+    const sec = parseInt(m1[2], 10);
+    const cs  = parseInt(m1[3].padEnd(2, "0"), 10); // 1 dígito -> centésimas
+    return (min * 60 + sec) * 1000 + cs * 10;
+  }
+
+  // Caso B: solo dígitos (compacto)
+  // "12503" -> 01:25.03  (mm ss cc)
+  const d = s.replace(/\D/g, "").slice(0, 6);
+  if (!d) return 0;
+  const padded = d.padStart(6, "0");
+  const min = parseInt(padded.slice(0, 2), 10);
+  const sec = parseInt(padded.slice(2, 4), 10);
+  const cs  = parseInt(padded.slice(4, 6), 10);
+  return (min * 60 + sec) * 1000 + cs * 10;
+}
+
+function msToFinalTime(ms) {
+  const total = Math.max(0, Math.floor(ms));
+  const min = Math.floor(total / 60000);
+  const sec = Math.floor((total % 60000) / 1000);
+  const cs  = Math.floor((total % 1000) / 10);
+  return `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+}
+
+function finalTimeToSec(v){
+  const s = String(v).trim();
+
+  // mm:ss.cc  (ej 01:25.03)
+  const m = s.match(/^(\d+):([0-5]\d)\.(\d{1,2})$/);
+  if (m) {
+    const min = parseInt(m[1],10);
+    const sec = parseInt(m[2],10);
+    const cs  = parseInt(m[3].padEnd(2,"0"),10);
+    return (min * 60) + sec + (cs / 100);
+  }
+
+  // Compacto solo dígitos (mmsscc): 12503 -> 01:25.03
+  const d = s.replace(/\D/g,"").slice(0,6);
+  if (!d) return null;
+  const padded = d.padStart(6,"0");
+  const min = parseInt(padded.slice(0,2),10);
+  const sec = parseInt(padded.slice(2,4),10);
+  const cs  = parseInt(padded.slice(4,6),10);
+  return (min * 60) + sec + (cs / 100);
+}
+
+
+
 /** =========================
  *  Render general
  *  ========================= */
@@ -1363,6 +1291,123 @@ renderAll();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
+
+function generarFinalDirecta() {
+
+  const jr = state.pilotos
+    .filter(p => categoriaPorEdad(p.edad) === "JR" && p.timeSec != null)
+    .sort(sortPorTiempoAsc);
+
+  const may = state.pilotos
+    .filter(p => categoriaPorEdad(p.edad) === "MAY" && p.timeSec != null)
+    .sort(sortPorTiempoAsc);
+
+  const finalistas = [
+    ...jr.slice(0, 2),
+    ...may.slice(0, 2)
+  ];
+
+  const noClasificados = [
+    ...jr.slice(2),
+    ...may.slice(2)
+  ];
+
+  state.torneo.finalistas = finalistas.map(p => p.id);
+  state.torneo.noClasificados = noClasificados.map(p => p.id);
+
+  saveState();
+  renderTorneo();
+}
+// ===== CRONÓMETRO OFICIAL =====
+document.addEventListener("DOMContentLoaded", () => {
+  const elDisplay = document.querySelector("#display");
+  const btnStart = document.querySelector("#btnStart");
+  const btnPause = document.querySelector("#btnPause");
+  const btnReset = document.querySelector("#btnResetCrono");
+  const btnMark  = document.querySelector("#btnMark");
+
+  if (!elDisplay || !btnStart) {
+    console.warn("No encuentro #display o #btnStart.");
+    return;
+  }
+
+  let running = false;
+  let rafId = null;
+  let startAt = 0;   // performance.now() al iniciar/reanudar
+  let elapsed = 0;   // ms acumulados
+
+  const fmt = (ms) => {
+    const total = Math.floor(ms);
+    const m = Math.floor(total / 60000);
+    const s = Math.floor((total % 60000) / 1000);
+    const cs = Math.floor((total % 1000) / 10);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
+  };
+
+  const render = () => {
+    const now = performance.now();
+    const current = elapsed + (running ? (now - startAt) : 0);
+    elDisplay.textContent = fmt(current);
+    if (running) rafId = requestAnimationFrame(render);
+  };
+
+  const start = () => {
+    if (running) return;
+    running = true;
+    startAt = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(render);
+  };
+
+  const pause = () => {
+    if (!running) return;
+    running = false;
+    elapsed += (performance.now() - startAt);
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    render();
+  };
+
+  const reset = () => {
+    running = false;
+    elapsed = 0;
+    startAt = 0;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    elDisplay.textContent = "00:00.00";
+  };
+
+  const mark = () => {
+    // por ahora solo marca en consola; luego lo conectamos a tu lista/tabla
+    console.log("⏱ Marca:", elDisplay.textContent);
+  };
+const inputFinalTime = document.querySelector("#finalTime");
+
+if (inputFinalTime) {
+  inputFinalTime.addEventListener("input", () => {
+    const raw = inputFinalTime.value.replace(/\D/g, "").slice(0, 6);
+    if (!raw) {
+      inputFinalTime.value = "";
+      return;
+    }
+
+    const padded = raw.padStart(6, "0");
+    const m  = padded.slice(0, 2);
+    const s  = padded.slice(2, 4);
+    const cs = padded.slice(4, 6);
+
+    inputFinalTime.value = `${m}:${s}.${cs}`;
+  });
+}
+  btnStart.addEventListener("click", (e) => { e.preventDefault(); start(); });
+  btnPause.addEventListener("click", (e) => { e.preventDefault(); pause(); });
+  btnReset.addEventListener("click", (e) => { e.preventDefault(); reset(); });
+  btnMark.addEventListener("click", (e) => { e.preventDefault(); mark(); });
+
+  // Inicializa
+  if (!elDisplay.textContent.trim()) elDisplay.textContent = "00:00.00";
+});
+
 </script>
 
 </body>
